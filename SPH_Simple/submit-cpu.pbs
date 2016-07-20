@@ -1,0 +1,8 @@
+#!/bin/bash
+#PBS -A stf007
+#PBS -l walltime=02:00:00,nodes=1
+#PBS -j oe
+#PBS -N SPHcpu
+
+cd $PBS_O_WORKDIR
+time -p aprun ./sph.out

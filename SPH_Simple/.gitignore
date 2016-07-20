@@ -1,0 +1,4 @@
+*.out
+SPHgpu.o*
+SPHcpu.o*
+*.o

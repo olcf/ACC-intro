@@ -1,0 +1,12 @@
+#!/bin/bash
+#PBS -A STF007
+#PBS -j oe
+#PBS -N SPHgpu
+#PBS -l walltime=02:00:00,nodes=1
+
+source $MODULESHOME/init/bash
+module load cudatoolkit
+
+cd $PBS_O_WORKDIR
+time -p aprun ./sph-acc.out
+

@@ -151,7 +151,6 @@ void updatePressures(fluid_particle *fluid_particles, param *params)
 {
     int num_particles = params->number_fluid_particles;
 
-    // Parallelize this loop
     for(int i=0; i<num_particles; i++) {
         double3 p_pos = fluid_particles[i].pos;
         double3 p_v   = fluid_particles[i].v;
@@ -167,23 +166,19 @@ void updatePressures(fluid_particle *fluid_particles, param *params)
     }
 }
 
-double3 computeBoundaryAcceleration(double3 p_pos, double3 k_pos, double3 k_n,
-                                    double h, double speed_sound)
+void computeBoundaryAcceleration(double3* p_a, double3 p_pos, double3 k_pos, double3 k_n,
+                                 double h, double speed_sound)
 {
-    double3 p_a;
     double bGamma = boundaryGamma(p_pos,k_pos,k_n,h,speed_sound);
-    p_a.x = bGamma * k_n.x;
-    p_a.y = bGamma * k_n.y;
-    p_a.z = bGamma * k_n.z;
-
-    return p_a;
+    p_a->x = bGamma * k_n.x;
+    p_a->y = bGamma * k_n.y;
+    p_a->z = bGamma * k_n.z;
 }
 
-double3 computeAcceleration(double3 p_pos, double3 p_v, double p_density,
-                            double p_pressure, double3 q_pos, double3 q_v,
-                            double q_density, double q_pressure, const param *const params)
+void computeAcceleration(double3* a, double3 p_pos, double3 p_v, double p_density,
+                         double p_pressure, double3 q_pos, double3 q_v,
+                         double q_density, double q_pressure, const param *const params)
 {
-    double3 a;
     double accel;
     double h = params->smoothing_radius;
     double alpha = params->alpha;
@@ -194,9 +189,9 @@ double3 computeAcceleration(double3 p_pos, double3 p_v, double p_density,
     // Pressure force
     accel = (p_pressure/(p_density*p_density) + q_pressure/(q_density*q_density))
             * mass_particle * del_W(p_pos,q_pos,h);
-    a.x = -accel * (p_pos.x - q_pos.x);
-    a.y = -accel * (p_pos.y - q_pos.y);
-    a.z = -accel * (p_pos.z - q_pos.z);
+    a->x = -accel * (p_pos.x - q_pos.x);
+    a->y = -accel * (p_pos.y - q_pos.y);
+    a->z = -accel * (p_pos.z - q_pos.z);
 
     // Viscosity force
     double VdotR = (p_v.x-q_v.x)*(p_pos.x-q_pos.x)
@@ -211,19 +206,17 @@ double3 computeAcceleration(double3 p_pos, double3 p_v, double p_density,
         double eps = h/10.0;
         double stress = nu * VdotR / (r2 + eps*h*h);
         accel = mass_particle * stress * del_W(p_pos, q_pos, h);
-        a.x += accel * (p_pos.x - q_pos.x);
-        a.y += accel * (p_pos.y - q_pos.y);
-        a.z += accel * (p_pos.z - q_pos.z);
+        a->x += accel * (p_pos.x - q_pos.x);
+        a->y += accel * (p_pos.y - q_pos.y);
+        a->z += accel * (p_pos.z - q_pos.z);
     }
 
     //Surface tension
     // BT 07 http://cg.informatik.uni-freiburg.de/publications/2011_GRAPP_airBubbles.pdf
     accel = surface_tension * W(p_pos,q_pos,h);
-    a.x += accel * (p_pos.x - q_pos.x);
-    a.y += accel * (p_pos.y - q_pos.y);
-    a.z += accel * (p_pos.z - q_pos.z);
-
-    return a;
+    a->x += accel * (p_pos.x - q_pos.x);
+    a->y += accel * (p_pos.y - q_pos.y);
+    a->z += accel * (p_pos.z - q_pos.z);
 }
 
 // Update particle acclerations
@@ -249,9 +242,10 @@ void updateAccelerations(fluid_particle *fluid_particles,
                 double3 q_v   = fluid_particles[j].v;
                 double q_density = fluid_particles[j].density;
                 double q_pressure = fluid_particles[j].pressure;
-                double3 tmp_a = computeAcceleration(p_pos, p_v, p_density,
-                                                    p_pressure, q_pos, q_v,
-                                                    q_density, q_pressure, params);
+                double3 tmp_a;
+                computeAcceleration(&tmp_a, p_pos, p_v, p_density,
+                                    p_pressure, q_pos, q_v,
+                                    q_density, q_pressure, params);
 
                 ax += tmp_a.x;
                 ay += tmp_a.y;
@@ -273,9 +267,10 @@ void updateAccelerations(fluid_particle *fluid_particles,
         for (int j=0; j<num_boundary_particles; j++) {
             double3 k_pos = boundary_particles[j].pos;
             double3 k_n   = boundary_particles[j].n;
-            double3 tmp_a = computeBoundaryAcceleration(p_pos,k_pos,k_n,
-                                                        params->smoothing_radius,
-                                                        params->speed_sound);
+            double3 tmp_a;
+            computeBoundaryAcceleration(&tmp_a, p_pos,k_pos,k_n,
+                                        params->smoothing_radius,
+                                        params->speed_sound);
             ax += tmp_a.x;
             ay += tmp_a.y;
             az += tmp_a.z;
@@ -289,11 +284,11 @@ void updateAccelerations(fluid_particle *fluid_particles,
 
 // Update particle positions
 // Leap Frog integration with v(t+1) estimated
-void updatePositions(fluid_particle *fluid_particles, param *params)
-{
+void updatePositions(fluid_particle *fluid_particles, param *params) {
     double dt = params->time_step;
-
-    for(int i=0; i<params->number_fluid_particles; i++) {
+    int num_fluid_particles = params->number_fluid_particles;
+ 
+    for(int i=0; i<num_fluid_particles; i++) {
 
         // Velocity at t + dt/2
         double3 v_half = fluid_particles[i].v_half;

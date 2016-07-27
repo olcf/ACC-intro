@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
 
         if (n % params.steps_per_frame == 0) {
             writeFile(fluid_particles, &params);
-        }
+       }
     }
 
     finalizeParticles(fluid_particles, boundary_particles);
@@ -121,35 +121,35 @@ double boundaryGamma(double3 p_pos, double3 k_pos, double3 k_n, double h, double
 // Particle attribute computations
 ////////////////////////////////////////////////////////////////////////////
 double computeDensity(double3 p_pos, double3 p_v, double3 q_pos, double3 q_v,
-                      param *params)
+                      double mass_particle, double smoothing_radius, double time_step)
 {
     double v_x = (p_v.x - q_v.x);
     double v_y = (p_v.y - q_v.y);
     double v_z = (p_v.z - q_v.z);
 
-    double density = params->mass_particle * del_W(p_pos,q_pos,
-                                                   params->smoothing_radius);
+    double density = mass_particle * del_W(p_pos,q_pos,
+                                                   smoothing_radius);
     double density_x = density * v_x * (p_pos.x - q_pos.x);
     double density_y = density * v_y * (p_pos.y - q_pos.y);
     double density_z = density * v_z * (p_pos.z - q_pos.z);
 
-    density = (density_x + density_y + density_z)*params->time_step;
+    density = (density_x + density_y + density_z)*time_step;
 
     return density;
 }
 
-double computePressure(double p_density, param *params)
+double computePressure(double p_density, double rest_density, double speed_sound)
 {
     double gam = 7.0;
-    double B = params->rest_density * params->speed_sound*params->speed_sound / gam;
-    double pressure =  B * (pow((p_density/params->rest_density),gam) - 1.0);
+    double B = rest_density * speed_sound*speed_sound / gam;
+    double pressure =  B * (pow((p_density/rest_density),gam) - 1.0);
 
     return pressure;
 }
 
 void updatePressures(fluid_particle *fluid_particles, param *params)
 {
-    int num_particles = params->number_fluid_particles;
+    int num_particles = params[0].number_fluid_particles;
 
     for(int i=0; i<num_particles; i++) {
         double3 p_pos = fluid_particles[i].pos;
@@ -159,10 +159,10 @@ void updatePressures(fluid_particle *fluid_particles, param *params)
         for(int j=0; j<num_particles; j++) {
             double3 q_pos = fluid_particles[j].pos;
             double3 q_v   = fluid_particles[j].v;
-            density += computeDensity(p_pos,p_v,q_pos,q_v, params);
+            density += computeDensity(p_pos,p_v,q_pos,q_v, params[0].mass_particle,params[0].smoothing_radius,params[0].time_step);
         }
         fluid_particles[i].density = density;
-        fluid_particles[i].pressure = computePressure(density, params);
+        fluid_particles[i].pressure = computePressure(density, params[0].rest_density,params[0].speed_sound);
     }
 }
 
@@ -177,14 +177,16 @@ void computeBoundaryAcceleration(double3* p_a, double3 p_pos, double3 k_pos, dou
 
 void computeAcceleration(double3* a, double3 p_pos, double3 p_v, double p_density,
                          double p_pressure, double3 q_pos, double3 q_v,
-                         double q_density, double q_pressure, const param *const params)
+                         double q_density, double q_pressure, double smoothing_radius,
+                         double alpha, double speed_sound, double mass_particle,
+                         double surface_tension)
 {
     double accel;
-    double h = params->smoothing_radius;
-    double alpha = params->alpha;
-    double speed_sound = params->speed_sound;
-    double mass_particle = params->mass_particle;
-    double surface_tension = params->surface_tension;
+    double h = smoothing_radius;
+    //double alpha = params->alpha;
+    //double speed_sound = params->speed_sound;
+    //double mass_particle = params->mass_particle;
+    //double surface_tension = params->surface_tension;
 
     // Pressure force
     accel = (p_pressure/(p_density*p_density) + q_pressure/(q_density*q_density))
@@ -245,7 +247,9 @@ void updateAccelerations(fluid_particle *fluid_particles,
                 double3 tmp_a;
                 computeAcceleration(&tmp_a, p_pos, p_v, p_density,
                                     p_pressure, q_pos, q_v,
-                                    q_density, q_pressure, params);
+                                    q_density, q_pressure, params[0].smoothing_radius, 
+                                    params[0].alpha, params[0].speed_sound, 
+                                    params[0].mass_particle,params[0].surface_tension);
 
                 ax += tmp_a.x;
                 ay += tmp_a.y;
@@ -269,8 +273,8 @@ void updateAccelerations(fluid_particle *fluid_particles,
             double3 k_n   = boundary_particles[j].n;
             double3 tmp_a;
             computeBoundaryAcceleration(&tmp_a, p_pos,k_pos,k_n,
-                                        params->smoothing_radius,
-                                        params->speed_sound);
+                                        params[0].smoothing_radius,
+                                        params[0].speed_sound);
             ax += tmp_a.x;
             ay += tmp_a.y;
             az += tmp_a.z;

@@ -194,10 +194,6 @@ void computeAcceleration(double3* a, double3 p_pos, double3 p_v, double p_densit
 {
     double accel;
     double h = smoothing_radius;
-    //double alpha = params->alpha;
-    //double speed_sound = params->speed_sound;
-    //double mass_particle = params->mass_particle;
-    //double surface_tension = params->surface_tension;
 
     // Pressure force
     accel = (p_pressure/(p_density*p_density) + q_pressure/(q_density*q_density))

@@ -1,8 +1,8 @@
-#!/bin/bash
-#PBS -A stf007
+#!/bin/bash -l
+#PBS -A olcftrain
 #PBS -l walltime=02:00:00,nodes=1
 #PBS -j oe
 #PBS -N SPHcpu
 
 cd $PBS_O_WORKDIR
-time -p aprun ./sph.out
+time -p aprun ./sph-cpu.out

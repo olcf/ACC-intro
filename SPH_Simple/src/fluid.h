@@ -62,7 +62,7 @@ struct PARAM {
 void updatePositions(fluid_particle *fluid_particles, param *params);
 void updatePressures(fluid_particle *fluid_particles, param *params);
 void updateAccelerations(fluid_particle *fluid_particles, boundary_particle *boundary_particles, param *params);
-double computeDensity(double3 p_pos, double3 p_v, double3 q_pos, double3 q_v, param *params);
+double computeDensity(double3 p_pos, double3 p_v, double3 q_pos, double3 q_v, double mass_particle, double smoothing_radius, double time_step);
 void eulerStart(fluid_particle* fluid_particles, boundary_particle *boundary_particles, param *params);
 void initParticles(fluid_particle** fluid_particles, boundary_particle** boundary_particles, AABB* water, AABB* boundary, param* params);
 void initParams(AABB* water_volume, AABB* boundary_volume, param* params);

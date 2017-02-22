@@ -2,11 +2,11 @@
 #include <stdlib.h>
 #include <math.h>
 
-double sin_squared(float theta) {
+double sin_squared(double theta) {
   return sin(theta) * sin(theta);
 } 
 
-double cos_squared(float theta) {
+double cos_squared(double theta) {
   return cos(theta) * cos(theta);
 }
 

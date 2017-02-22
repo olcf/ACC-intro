@@ -3,11 +3,11 @@
 #include <math.h>
 #include <omp.h>
 
-double sin_squared(float theta) {
+double sin_squared(double theta) {
   return sin(theta) * sin(theta);
 } 
 
-double cos_squared(float theta) {
+double cos_squared(double theta) {
   return cos(theta) * cos(theta);
 }
 

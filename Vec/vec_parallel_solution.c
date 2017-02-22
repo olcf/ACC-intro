@@ -3,12 +3,12 @@
 #include <math.h>
 
 #pragma acc routine
-double sin_squared(float theta) {
+double sin_squared(double theta) {
   return sin(theta) * sin(theta);
 } 
 
 #pragma acc routine
-double cos_squared(float theta) {
+double cos_squared(double theta) {
   return cos(theta) * cos(theta);
 }
 

@@ -39,9 +39,9 @@ int main( int argc, char* argv[] ) {
     }
     sum /= n;
     if(sum - 1.0 < 0.0000001)
-      printf("result correct\n");
+      std::cout<<"result correct\n";
     else
-      printf("result incorrect!\n");
+      std::cout<<"result incorrect!\n";
  
     return 0;
 }
